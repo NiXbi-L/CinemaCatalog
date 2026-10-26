@@ -15,8 +15,9 @@ typedef struct user
 {
     unsigned int id;
     char* name;
+	char* password;
 	bool is_admin;
-	char card_num[16];
+	char card_num[17];
 	struct user* next;
 	struct user* previous;
 } user;

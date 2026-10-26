@@ -4,75 +4,130 @@
 #include <string.h>
 #include "render.h"
 #include "menu.h"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
-char* create_card_str(char* name) {
-    char* res = (char*)malloc(21);
+static void clear_screen(void) {
+#ifdef _WIN32
+    system("cls");
+#else
+    if (isatty(STDOUT_FILENO))
+        system("clear");
+#endif
+}
+
+static int utf8_size(const unsigned char* text) {
+    if (*text < 0x80)
+        return 1;
+    if ((*text & 0xE0) == 0xC0)
+        return 2;
+    if ((*text & 0xF0) == 0xE0)
+        return 3;
+    if ((*text & 0xF8) == 0xF0)
+        return 4;
+    return 1;
+}
+
+static void pad_card(char* dst, const char* src) {
+    const char* text = src == NULL ? "" : src;
+    const char* cursor = text;
+    size_t used = 0;
+    int columns = 0;
+    int total = 0;
+    int limit = 20;
+
+    while (*cursor != '\0') {
+        cursor += utf8_size((const unsigned char*)cursor);
+        total++;
+    }
+    if (total > 20)
+        limit = 17;
+
+    cursor = text;
+    while (*cursor != '\0' && columns < limit) {
+        int size = utf8_size((const unsigned char*)cursor);
+        memcpy(dst + used, cursor, (size_t)size);
+        used += (size_t)size;
+        cursor += size;
+        columns++;
+    }
+    if (total > 20) {
+        memcpy(dst + used, "...", 3);
+        used += 3;
+        columns += 3;
+    }
+    while (columns < 20) {
+        dst[used++] = ' ';
+        columns++;
+    }
+    dst[used] = '\0';
+}
+
+static char* alloc_card(void) {
+    char* res = (char*)malloc(20 * 4 + 1);
     if (res == NULL) {
-        printf("Ошибка выделения памяти.\n");
+        printf("РћС€РёР±РєР° РІС‹РґРµР»РµРЅРёСЏ РїР°РјСЏС‚Рё.\n");
         exit(1);
     }
-
-    if (strlen(name) > 20) {
-        strncpy(res, name, 17);
-        for (int i = 17; i < 20; i++) res[i] = '.';
-        res[20] = '\0'; 
-    }
-    else if (strlen(name) == 20) {
-        return name;
-    }
-    else {
-        strcpy(res, name);
-        for (int i = strlen(name); i < 20; i++) res[i] = ' ';
-        res[20] = '\0'; 
-    }
-
     return res;
 }
 
+char* create_card_str(char* name) {
+    char* res = alloc_card();
+    pad_card(res, name);
+    return res;
+}
 
 char* create_card_int(int num) {
-    char* res = (char*)malloc(21);
-    if (res == NULL) {
-        printf("Ошибка выделения памяти.\n");
-        return NULL;
-    }
-
-    char nm[21]; 
-    sprintf(nm, "%i", num); 
-
-    strcpy(res, nm); 
-    for (int i = strlen(nm); i < 20; i++) res[i] = ' '; 
-    res[20] = '\0'; 
-
-    return res; 
-}
-
-
-char* create_card_float(float num) {
-    char* res = (char*)malloc(21);
-    if (res == NULL) {
-        printf("Ошибка выделения памяти.\n");
-        return NULL;
-    }
-
+    char* res = alloc_card();
     char nm[21];
-    sprintf(nm, "%f", num);
-
-    strcpy(res, nm);
-    for (int i = strlen(nm); i < 20; i++) res[i] = ' ';
-    res[20] = '\0';
-
+    sprintf(nm, "%i", num);
+    pad_card(res, nm);
     return res;
 }
 
+char* create_card_float(float num) {
+    char* res = alloc_card();
+    char nm[21];
+    sprintf(nm, "%.1f", num);
+    pad_card(res, nm);
+    return res;
+}
 
 void render_film(film* active_film) {
-    system("cls");
+    film* prev;
+    film* next;
+    char* cells[15];
+    int i;
+
+    if (active_film == NULL)
+        return;
+
+    prev = active_film->previous != NULL ? active_film->previous : active_film;
+    next = active_film->next != NULL ? active_film->next : active_film;
+    clear_screen();
+
+    cells[0] = create_card_str(prev->name);
+    cells[1] = create_card_str(active_film->name);
+    cells[2] = create_card_str(next->name);
+    cells[3] = create_card_int(prev->year_create);
+    cells[4] = create_card_int(active_film->year_create);
+    cells[5] = create_card_int(next->year_create);
+    cells[6] = create_card_str(prev->country);
+    cells[7] = create_card_str(active_film->country);
+    cells[8] = create_card_str(next->country);
+    cells[9] = create_card_str(prev->genre);
+    cells[10] = create_card_str(active_film->genre);
+    cells[11] = create_card_str(next->genre);
+    cells[12] = create_card_float(prev->rating);
+    cells[13] = create_card_float(active_film->rating);
+    cells[14] = create_card_float(next->rating);
 
     printf(
         "+=============================================================================+\n"
-        "|1 - вперед 2 - назад 3 - выбрать фильм                                       |\n"
-        "|4 - добавить в избранное 5 - выход                                           |\n"
+        "|1 - РІРїРµСЂРµРґ 2 - РЅР°Р·Р°Рґ 3 - РІС‹Р±СЂР°С‚СЊ С„РёР»СЊРј                                       |\n"
+        "|4 - РґРѕР±Р°РІРёС‚СЊ РІ РёР·Р±СЂР°РЅРЅРѕРµ 5 - РІС‹С…РѕРґ                                           |\n"
         "+=============================================================================+\n"
         "|                            /``````````````````\\                             |\n"
         "|   +====================+  +====================+  +====================+    |\n"
@@ -86,38 +141,13 @@ void render_film(film* active_film) {
         "|   +====================+  +====================+  +====================+    |\n"
         "|                           \\___________________/                             |\n"
         "+=============================================================================+\n",
-        create_card_str(active_film->previous->name),
-        create_card_str(active_film->name),
-        create_card_str(active_film->next->name),
-        create_card_int(active_film->previous->year_create),
-        create_card_int(active_film->year_create),
-        create_card_int(active_film->next->year_create),
-        create_card_str(active_film->previous->country),
-        create_card_str(active_film->country),
-        create_card_str(active_film->next->country),
-        create_card_str(active_film->previous->genre),
-        create_card_str(active_film->genre),
-        create_card_str(active_film->next->genre),
-        create_card_float(active_film->previous->rating),
-        create_card_float(active_film->rating),
-        create_card_float(active_film->next->rating)
+        cells[0], cells[1], cells[2],
+        cells[3], cells[4], cells[5],
+        cells[6], cells[7], cells[8],
+        cells[9], cells[10], cells[11],
+        cells[12], cells[13], cells[14]
     );
+
+    for (i = 0; i < 15; i++)
+        free(cells[i]);
 }
-/*
-+===========================================================================+
-|1 - вперед 2 - назад 3 - выбрать фильм                                     |
-|4 - добавить в избранное 5 - выход                                         |
-+===========================================================================+
-|                            /`````````````````\                            |
-|   +====================+  +===================+  +===================+    |
-|   |asklfjkasdjfklsdl...|  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   |                    |  |                   |  |                   |    |
-|   +====================+  +===================+  +===================+    |
-|                            \_________________/                            |
-+===========================================================================+
-*/
