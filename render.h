@@ -1,4 +1,3 @@
-#pragma once
-#include "menu.h"
+#include "cinema.h"
 
-void render_film(film* active_film);
+void render_film(const FilmNode *active);

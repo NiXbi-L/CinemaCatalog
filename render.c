@@ -1,20 +1,10 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "render.h"
-#include "menu.h"
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 static void clear_screen(void) {
-#ifdef _WIN32
-    system("cls");
-#else
-    if (isatty(STDOUT_FILENO))
-        system("clear");
-#endif
+    system("clear");
 }
 
 static int utf8_size(const unsigned char* text) {
@@ -65,7 +55,7 @@ static void pad_card(char* dst, const char* src) {
 }
 
 static char* alloc_card(void) {
-    char* res = (char*)malloc(20 * 4 + 1);
+    char* res = malloc(20 * 4 + 1);
     if (res == NULL) {
         printf("Ошибка выделения памяти.\n");
         exit(1);
@@ -73,7 +63,7 @@ static char* alloc_card(void) {
     return res;
 }
 
-char* create_card_str(char* name) {
+char* create_card_str(const char* name) {
     char* res = alloc_card();
     pad_card(res, name);
     return res;
@@ -82,12 +72,12 @@ char* create_card_str(char* name) {
 char* create_card_int(int num) {
     char* res = alloc_card();
     char nm[21];
-    sprintf(nm, "%i", num);
+    sprintf(nm, "%d", num);
     pad_card(res, nm);
     return res;
 }
 
-char* create_card_float(float num) {
+char* create_card_float(double num) {
     char* res = alloc_card();
     char nm[21];
     sprintf(nm, "%.1f", num);
@@ -95,34 +85,34 @@ char* create_card_float(float num) {
     return res;
 }
 
-void render_film(film* active_film) {
-    film* prev;
-    film* next;
+void render_film(const FilmNode *active_film) {
+    const FilmNode *prev;
+    const FilmNode *next;
     char* cells[15];
     int i;
 
     if (active_film == NULL)
         return;
 
-    prev = active_film->previous != NULL ? active_film->previous : active_film;
+    prev = active_film->prev != NULL ? active_film->prev : active_film;
     next = active_film->next != NULL ? active_film->next : active_film;
     clear_screen();
 
-    cells[0] = create_card_str(prev->name);
-    cells[1] = create_card_str(active_film->name);
-    cells[2] = create_card_str(next->name);
-    cells[3] = create_card_int(prev->year_create);
-    cells[4] = create_card_int(active_film->year_create);
-    cells[5] = create_card_int(next->year_create);
-    cells[6] = create_card_str(prev->country);
-    cells[7] = create_card_str(active_film->country);
-    cells[8] = create_card_str(next->country);
-    cells[9] = create_card_str(prev->genre);
-    cells[10] = create_card_str(active_film->genre);
-    cells[11] = create_card_str(next->genre);
-    cells[12] = create_card_float(prev->rating);
-    cells[13] = create_card_float(active_film->rating);
-    cells[14] = create_card_float(next->rating);
+    cells[0] = create_card_str(prev->film.title);
+    cells[1] = create_card_str(active_film->film.title);
+    cells[2] = create_card_str(next->film.title);
+    cells[3] = create_card_int(prev->film.year);
+    cells[4] = create_card_int(active_film->film.year);
+    cells[5] = create_card_int(next->film.year);
+    cells[6] = create_card_str(prev->film.country);
+    cells[7] = create_card_str(active_film->film.country);
+    cells[8] = create_card_str(next->film.country);
+    cells[9] = create_card_str(prev->film.genre);
+    cells[10] = create_card_str(active_film->film.genre);
+    cells[11] = create_card_str(next->film.genre);
+    cells[12] = create_card_float(prev->film.rating);
+    cells[13] = create_card_float(active_film->film.rating);
+    cells[14] = create_card_float(next->film.rating);
 
     printf(
         "+=============================================================================+\n"
