@@ -4,7 +4,11 @@
 #include "render.h"
 
 static void clear_screen(void) {
+#ifdef _WIN32
+    system("cls");
+#else
     system("clear");
+#endif
 }
 
 static int utf8_size(const unsigned char* text) {

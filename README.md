@@ -14,20 +14,27 @@ clang -std=c11 -Wall -Wextra -c cinema.c
 
 ## Сборка программы
 
-Из корня проекта:
+Команды запускаются из корня проекта. Нужен `clang` или `gcc` в `PATH`.
+
+### macOS и Linux
 
 ```bash
 mkdir -p bin
 clang -std=c11 -Wall -Wextra -o bin/CinemaCatalog main.c menu.c cinema.c render.c
-```
-
-## Запуск
-
-Программу нужно запускать из корня проекта: она читает `Users.txt` и `Films.txt` из текущей папки.
-
-```bash
 ./bin/CinemaCatalog
 ```
+
+### Windows
+
+В командной строке (`cmd`):
+
+```bat
+mkdir bin
+clang -std=c11 -Wall -Wextra -o bin\CinemaCatalog.exe main.c menu.c cinema.c render.c
+bin\CinemaCatalog.exe
+```
+
+Если установлен MinGW и команда называется `gcc`, замените `clang` на `gcc`. Программу нужно запускать из корня проекта: она читает `Users.txt` и `Films.txt` из текущей папки.
 
 ## Вход
 
